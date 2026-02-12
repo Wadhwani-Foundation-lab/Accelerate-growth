@@ -22,11 +22,16 @@ import { AgreementScreen } from './components/agreement/AgreementScreen';
 // Workbench
 import { VentureWorkbench } from './components/workbench/VentureWorkbench';
 
+// Selection
+import { ApprovalWorkflow } from './components/selection/ApprovalWorkflow';
+
 // Dashboards
 import { CSMDashboard } from './components/dashboard/CSMDashboard';
 import { VPDashboard } from './components/dashboard/VPDashboard';
 import { MentorDashboard } from './components/dashboard/MentorDashboard';
 import { AdminDashboard } from './components/dashboard/AdminDashboard';
+import { FieldHeadDashboard } from './components/dashboard/FieldHeadDashboard';
+import { MyVenturePage } from './components/dashboard/MyVenturePage';
 
 import type { ReactNode } from 'react';
 
@@ -80,16 +85,6 @@ function RoleRedirect() {
   }
 }
 
-// Placeholder for screens not yet fully built
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="max-w-4xl mx-auto text-center py-12">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
-      <p className="text-gray-500">This screen is coming soon.</p>
-    </div>
-  );
-}
-
 function AppRoutes() {
   return (
     <Routes>
@@ -127,14 +122,14 @@ function AppRoutes() {
       <Route path="/my-venture" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="My Venture" />
+            <MyVenturePage />
           </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/my-venture/welcome" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="Welcome" />
+            <MyVenturePage />
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -178,7 +173,16 @@ function AppRoutes() {
       <Route path="/csm/approvals" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="Approvals" />
+            <ApplicationsQueue />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+
+      {/* Approval Workflow */}
+      <Route path="/approvals/:ventureId" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <ApprovalWorkflow />
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -228,14 +232,14 @@ function AppRoutes() {
       <Route path="/field/dashboard" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="Field Head Dashboard" />
+            <FieldHeadDashboard />
           </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/field/approvals" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="Field Head Approvals" />
+            <FieldHeadDashboard />
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -260,14 +264,14 @@ function AppRoutes() {
       <Route path="/committee/dashboard" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="Selection Committee Dashboard" />
+            <ApplicationsQueue />
           </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/committee/interviews" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="Interviews" />
+            <ApplicationsQueue />
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -283,21 +287,21 @@ function AppRoutes() {
       <Route path="/admin/users" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="User Management" />
+            <AdminDashboard />
           </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/ventures" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="All Ventures" />
+            <AdminDashboard />
           </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/settings" element={
         <ProtectedRoute>
           <AppLayout>
-            <PlaceholderPage title="Settings" />
+            <AdminDashboard />
           </AppLayout>
         </ProtectedRoute>
       } />

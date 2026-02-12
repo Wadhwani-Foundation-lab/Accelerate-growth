@@ -6,6 +6,7 @@ import { Button } from '../common/Button';
 import { Stepper } from '../common/Stepper';
 import { Modal } from '../common/Modal';
 import { STREAM_DEFINITIONS, type StreamSelfStatus, type SupportType, type ApplicationSource } from '../../types';
+import { useCreateVenture } from '../../hooks/useVentures';
 
 const STEPS = ['Venture Definition', 'Commitment', 'Support Needs'];
 
@@ -77,27 +78,33 @@ export function SupportNeeds() {
     return needHelpCount < 3;
   }
 
+  const createVenture = useCreateVenture();
+
   async function handleSubmit() {
     setSubmitting(true);
-    // In production, this would POST to the API
-    // For now, store in sessionStorage and show success
-    const step1 = JSON.parse(sessionStorage.getItem('application_step1') || '{}');
-    const step2 = JSON.parse(sessionStorage.getItem('application_step2') || '{}');
+    try {
+      const step1 = JSON.parse(sessionStorage.getItem('application_step1') || '{}');
+      const step2 = JSON.parse(sessionStorage.getItem('application_step2') || '{}');
 
-    const application = {
-      ...step1,
-      ...step2,
-      streams,
-      source,
-    };
+      await createVenture.mutateAsync({
+        ...step1,
+        ...step2,
+        source: source || 'self_initiated',
+        streams,
+      });
 
-    console.log('Application submitted:', application);
-    sessionStorage.setItem('application_complete', JSON.stringify(application));
+      // Clear session storage
+      sessionStorage.removeItem('application_step1');
+      sessionStorage.removeItem('application_step2');
+      sessionStorage.removeItem('application_complete');
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSubmitting(false);
-    setSubmitted(true);
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Failed to submit application:', err);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {

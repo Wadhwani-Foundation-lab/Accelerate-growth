@@ -1,61 +1,32 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, AlertTriangle, TrendingUp, Users, Briefcase } from 'lucide-react';
 import { Card } from '../common/Card';
 import { TierBadge } from '../common/Badge';
 import { RAGDot } from '../common/RAGBadge';
-import type { RAGStatus } from '../../types';
-
-interface VentureRow {
-  id: string;
-  name: string;
-  entrepreneur: string;
-  tier: 'prime' | 'core' | 'select';
-  streams: RAGStatus[];
-  engagement: { learn: number; connect: number; do_: number };
-  alert: boolean;
-}
-
-const MOCK_VENTURES: VentureRow[] = [
-  {
-    id: '1', name: 'Germany Export - Cricket Equipment', entrepreneur: 'Rajesh Kumar',
-    tier: 'core', streams: ['green', 'green', 'yellow', 'red', 'yellow', 'complete'],
-    engagement: { learn: 8, connect: 3, do_: 2 }, alert: true,
-  },
-  {
-    id: '2', name: 'Organic Spice Brand - US Market', entrepreneur: 'Priya Mehta',
-    tier: 'select', streams: ['green', 'green', 'green', 'green', 'yellow', 'green'],
-    engagement: { learn: 12, connect: 5, do_: 0 }, alert: false,
-  },
-  {
-    id: '3', name: 'Solar Panel Assembly - Maharashtra', entrepreneur: 'Sunil Desai',
-    tier: 'prime', streams: ['yellow', 'red', 'yellow', 'yellow', 'red', 'green'],
-    engagement: { learn: 2, connect: 0, do_: 0 }, alert: true,
-  },
-  {
-    id: '4', name: 'EV Charging Stations - Gujarat', entrepreneur: 'Neha Shah',
-    tier: 'core', streams: ['green', 'green', 'green', 'green', 'green', 'green'],
-    engagement: { learn: 15, connect: 8, do_: 4 }, alert: false,
-  },
-  {
-    id: '5', name: 'Handloom to E-commerce', entrepreneur: 'Kamala Devi',
-    tier: 'prime', streams: ['complete', 'green', 'complete', 'yellow', 'red', 'complete'],
-    engagement: { learn: 6, connect: 2, do_: 1 }, alert: false,
-  },
-  {
-    id: '6', name: 'Frozen Food Export - Middle East', entrepreneur: 'Ahmed Khan',
-    tier: 'select', streams: ['green', 'yellow', 'green', 'green', 'green', 'yellow'],
-    engagement: { learn: 10, connect: 4, do_: 3 }, alert: false,
-  },
-];
+import type { RAGStatus, VentureTier } from '../../types';
+import { useVenturesWithStreams } from '../../hooks/useVentures';
 
 const STREAM_NAMES = ['Capital', 'Product', 'People', 'Ops', 'GTM', 'Procure'];
 
 export function CSMDashboard() {
   const navigate = useNavigate();
+  const { data: ventures, isLoading } = useVenturesWithStreams();
+  const [search, setSearch] = useState('');
 
-  const totalVentures = MOCK_VENTURES.length;
-  const atRisk = MOCK_VENTURES.filter((v) => v.streams.includes('red')).length;
-  const onTrack = MOCK_VENTURES.filter((v) => !v.streams.includes('red') && !v.streams.includes('yellow')).length;
+  const filtered = (ventures || []).filter(
+    (v) => !search ||
+      v.entrepreneur?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      v.venture_description?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalVentures = filtered.length;
+  const atRisk = filtered.filter((v) =>
+    v.venture_streams?.some((s) => s.rag_status === 'red')
+  ).length;
+  const onTrack = filtered.filter((v) =>
+    !v.venture_streams?.some((s) => s.rag_status === 'red' || s.rag_status === 'yellow')
+  ).length;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -105,14 +76,14 @@ export function CSMDashboard() {
               <Users className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">156</p>
+              <p className="text-2xl font-bold text-gray-900">—</p>
               <p className="text-xs text-gray-500">Jobs Projected</p>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Search & Filter */}
+      {/* Search */}
       <Card className="mb-6" padding="sm">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
@@ -120,67 +91,83 @@ export function CSMDashboard() {
             <input
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Search ventures..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-              <Filter className="w-4 h-4" />
-              Filter
-            </button>
-          </div>
+          <button className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+            <Filter className="w-4 h-4" />
+            Filter
+          </button>
         </div>
       </Card>
 
       {/* RAG Grid */}
-      <Card padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Venture</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-2 py-3">Tier</th>
-                {STREAM_NAMES.map((name) => (
-                  <th key={name} className="text-center text-xs font-medium text-gray-500 px-2 py-3">{name}</th>
-                ))}
-                <th className="text-center text-xs font-medium text-gray-500 px-2 py-3">Learn</th>
-                <th className="text-center text-xs font-medium text-gray-500 px-2 py-3">Connect</th>
-                <th className="text-center text-xs font-medium text-gray-500 px-2 py-3">Do</th>
-                <th className="text-center text-xs font-medium text-gray-500 px-2 py-3">Alert</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_VENTURES.map((venture) => (
-                <tr
-                  key={venture.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/workbench/${venture.id}`)}
-                >
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-gray-900">{venture.name}</p>
-                    <p className="text-xs text-gray-500">{venture.entrepreneur}</p>
-                  </td>
-                  <td className="px-2 py-3">
-                    <TierBadge tier={venture.tier} />
-                  </td>
-                  {venture.streams.map((status, i) => (
-                    <td key={i} className="px-2 py-3 text-center">
-                      <div className="flex justify-center">
-                        <RAGDot status={status} />
-                      </div>
-                    </td>
+      {isLoading ? (
+        <Card className="text-center py-12">
+          <div className="w-8 h-8 border-3 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-gray-500 mt-3">Loading portfolio...</p>
+        </Card>
+      ) : filtered.length === 0 ? (
+        <Card className="text-center py-12">
+          <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">No ventures in portfolio</p>
+          <p className="text-sm text-gray-400 mt-1">Ventures will appear here once they are active.</p>
+        </Card>
+      ) : (
+        <Card padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Venture</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-2 py-3">Tier</th>
+                  {STREAM_NAMES.map((name) => (
+                    <th key={name} className="text-center text-xs font-medium text-gray-500 px-2 py-3">{name}</th>
                   ))}
-                  <td className="px-2 py-3 text-center text-xs text-gray-600">{venture.engagement.learn}h</td>
-                  <td className="px-2 py-3 text-center text-xs text-gray-600">{venture.engagement.connect}h</td>
-                  <td className="px-2 py-3 text-center text-xs text-gray-600">{venture.engagement.do_}h</td>
-                  <td className="px-2 py-3 text-center">
-                    {venture.alert && <AlertTriangle className="w-4 h-4 text-red-500 mx-auto" />}
-                  </td>
+                  <th className="text-center text-xs font-medium text-gray-500 px-2 py-3">Alert</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody>
+                {filtered.map((venture) => {
+                  const streamMap = new Map(
+                    venture.venture_streams?.map((s) => [s.stream_number, s.rag_status]) || []
+                  );
+                  const hasRed = venture.venture_streams?.some((s) => s.rag_status === 'red');
+
+                  return (
+                    <tr
+                      key={venture.id}
+                      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/workbench/${venture.id}`)}
+                    >
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-medium text-gray-900">
+                          {venture.venture_description || venture.venture_product || 'Venture'}
+                        </p>
+                        <p className="text-xs text-gray-500">{venture.entrepreneur?.full_name}</p>
+                      </td>
+                      <td className="px-2 py-3">
+                        {venture.tier && <TierBadge tier={venture.tier as VentureTier} />}
+                      </td>
+                      {[1, 2, 3, 4, 5, 6].map((num) => (
+                        <td key={num} className="px-2 py-3 text-center">
+                          <div className="flex justify-center">
+                            <RAGDot status={(streamMap.get(num) || 'green') as RAGStatus} />
+                          </div>
+                        </td>
+                      ))}
+                      <td className="px-2 py-3 text-center">
+                        {hasRed && <AlertTriangle className="w-4 h-4 text-red-500 mx-auto" />}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
